@@ -161,12 +161,29 @@ def download_results(job_id):
     return send_file(file_path, as_attachment=True, download_name=filename)
 
 
-if __name__ == '__main__':
+    import socket
+    
+    def find_free_port(start_port=5000):
+        """Find the first available port starting from start_port."""
+        port = start_port
+        while port < 65535:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                sock.bind(('0.0.0.0', port))
+                sock.close()
+                return port
+            except OSError:
+                port += 1
+        return start_port
+        
+    port = find_free_port(5000)
+    
     print("\n" + "=" * 60)
     print("  Drug Discovery Pipeline")
     print("  Fragment-Based Drug Design Tool")
     print("=" * 60)
-    print(f"\n  Open your browser to: http://localhost:9090 (or your network IP)")
+    print(f"\n  ✅ Successfully Bound to Port: {port}")
+    print(f"  🌐 Open your browser to: http://127.0.0.1:{port}")
     print(f"\n  Supported file formats: {', '.join(ALLOWED_EXTENSIONS)}")
     print("=" * 60 + "\n")
-    app.run(host='0.0.0.0', debug=True, port=9090, use_reloader=False)
+    app.run(host='0.0.0.0', debug=True, port=port, use_reloader=False)
