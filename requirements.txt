@@ -1,0 +1,9 @@
+rdkit
+openbabel-wheel
+scikit-learn
+flask
+numpy
+pandas
+requests
+joblib
+gunicorn

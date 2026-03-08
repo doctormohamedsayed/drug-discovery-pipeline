@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Fragment-Based Drug Discovery Pipeline - AI-powered molecular design tool">
+    <title>🧬 Drug Discovery Pipeline | Fragment-Based Drug Design</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <!-- Animated Background -->
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-glow bg-glow-3"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">🧬</span>
+                <div>
+                    <h1>Drug Discovery Pipeline</h1>
+                    <p class="subtitle">Fragment-Based Drug Design with AI</p>
+                </div>
+            </div>
+            <div class="header-badge">
+                <span class="badge-dot"></span>
+                <span>Ready</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Upload Section -->
+        <section id="upload-section" class="card glass-card">
+            <div class="card-header">
+                <h2><span class="step-num">01</span> Upload Active Structures</h2>
+                <p class="card-desc">Upload your active molecular structures to begin the discovery pipeline</p>
+            </div>
+
+            <div class="upload-area" id="drop-zone">
+                <div class="upload-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.5">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                </div>
+                <p class="upload-text">Drag & drop your structure file here</p>
+                <p class="upload-hint">Supports: <strong>.sdf</strong>, <strong>.smi</strong>, <strong>.smiles</strong>,
+                    <strong>.csv</strong>, <strong>.txt</strong></p>
+                <input type="file" id="file-input" accept=".sdf,.smi,.smiles,.csv,.txt" hidden>
+                <button class="btn btn-outline" onclick="document.getElementById('file-input').click()">
+                    Browse Files
+                </button>
+                <div id="file-name" class="file-name-display" style="display:none;"></div>
+            </div>
+
+            <div class="divider"><span>OR</span></div>
+
+            <div class="smiles-input-area">
+                <label for="smiles-text" class="input-label">Paste SMILES (one per line)</label>
+                <textarea id="smiles-text" class="textarea" rows="5"
+                    placeholder="CC(=O)Oc1ccccc1C(=O)O&#10;CC(C)Cc1ccc(cc1)C(C)C(=O)O&#10;CN1C=NC2=C1C(=O)N(C(=O)N2C)C"></textarea>
+            </div>
+
+            <div class="api-key-area">
+                <label for="reaxys-key" class="input-label">
+                    Reaxys API Key <span class="optional-tag">Optional</span>
+                </label>
+                <input type="password" id="reaxys-key" class="input-field"
+                    placeholder="Enter your Reaxys API key for additional novelty checking">
+            </div>
+
+            <button id="start-btn" class="btn btn-primary btn-lg" onclick="startPipeline()">
+                <span class="btn-icon">🚀</span>
+                Start Discovery Pipeline
+            </button>
+        </section>
+
+        <!-- Progress Section -->
+        <section id="progress-section" class="card glass-card" style="display: none;">
+            <div class="card-header">
+                <h2><span class="step-num">02</span> Pipeline Progress</h2>
+                <p class="card-desc" id="progress-message">Initializing...</p>
+            </div>
+
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+                <span class="progress-text" id="progress-text">0%</span>
+            </div>
+
+            <div class="pipeline-steps" id="pipeline-steps">
+                <div class="pipeline-step" data-step="parsing">
+                    <div class="step-indicator"><span class="step-dot"></span></div>
+                    <div class="step-info">
+                        <span class="step-label">Parsing Structures</span>
+                        <span class="step-status" id="step-parsing-status"></span>
+                    </div>
+                </div>
+                <div class="pipeline-step" data-step="decoy_generation">
+                    <div class="step-indicator"><span class="step-dot"></span></div>
+                    <div class="step-info">
+                        <span class="step-label">Generating Decoys</span>
+                        <span class="step-status" id="step-decoy-status"></span>
+                    </div>
+                </div>
+                <div class="pipeline-step" data-step="classifier_training">
+                    <div class="step-indicator"><span class="step-dot"></span></div>
+                    <div class="step-info">
+                        <span class="step-label">Training Classifier</span>
+                        <span class="step-status" id="step-classifier-status"></span>
+                    </div>
+                </div>
+                <div class="pipeline-step" data-step="fragment_evaluation">
+                    <div class="step-indicator"><span class="step-dot"></span></div>
+                    <div class="step-info">
+                        <span class="step-label">Evaluating Fragments</span>
+                        <span class="step-status" id="step-fragment-status"></span>
+                    </div>
+                </div>
+                <div class="pipeline-step" data-step="fragment_linking">
+                    <div class="step-indicator"><span class="step-dot"></span></div>
+                    <div class="step-info">
+                        <span class="step-label">3D Fragment Linking</span>
+                        <span class="step-status" id="step-linking-status"></span>
+                    </div>
+                </div>
+                <div class="pipeline-step" data-step="ranking">
+                    <div class="step-indicator"><span class="step-dot"></span></div>
+                    <div class="step-info">
+                        <span class="step-label">Ranking Molecules</span>
+                        <span class="step-status" id="step-ranking-status"></span>
+                    </div>
+                </div>
+                <div class="pipeline-step" data-step="novelty_checking">
+                    <div class="step-indicator"><span class="step-dot"></span></div>
+                    <div class="step-info">
+                        <span class="step-label">Checking Novelty</span>
+                        <span class="step-status" id="step-novelty-status"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="elapsed-time">
+                <span>⏱️ Elapsed: </span>
+                <span id="elapsed-time">0s</span>
+            </div>
+        </section>
+
+        <!-- Error Section -->
+        <section id="error-section" class="card glass-card error-card" style="display: none;">
+            <div class="card-header">
+                <h2>❌ Pipeline Error</h2>
+                <p class="card-desc" id="error-message"></p>
+            </div>
+            <button class="btn btn-outline" onclick="resetPipeline()">Try Again</button>
+        </section>
+
+        <!-- Results Section -->
+        <section id="results-section" style="display: none;">
+            <!-- Classifier Metrics -->
+            <div class="card glass-card">
+                <div class="card-header">
+                    <h2><span class="step-num">03</span> Classifier Performance</h2>
+                </div>
+                <div class="metrics-grid" id="metrics-grid"></div>
+            </div>
+
+            <!-- Top 10 Molecules -->
+            <div class="card glass-card">
+                <div class="card-header">
+                    <h2><span class="step-num">04</span> Top 10 Generated Molecules</h2>
+                    <p class="card-desc">Ranked by composite score (activity + drug-likeness + synthetic accessibility +
+                        novelty)</p>
+                </div>
+
+                <div class="novelty-summary" id="novelty-summary"></div>
+
+                <div class="molecules-grid" id="molecules-grid"></div>
+            </div>
+
+            <!-- Fragment Library -->
+            <div class="card glass-card">
+                <div class="card-header">
+                    <h2><span class="step-num">05</span> Top Fragments</h2>
+                    <p class="card-desc">Ranked by predicted activity score</p>
+                </div>
+                <div class="fragments-table-container">
+                    <table class="data-table" id="fragments-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Structure</th>
+                                <th>SMILES</th>
+                                <th>Score</th>
+                                <th>MW</th>
+                                <th>Source</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fragments-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Download -->
+            <div class="card glass-card download-card">
+                <h3>Download Results</h3>
+                <div
+                    style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 1.5rem; flex-wrap: wrap; margin-top: 1rem;">
+                    <button class="btn btn-primary" onclick="downloadFile('json')">
+                        <span class="btn-icon">📥</span> JSON
+                    </button>
+                    <button class="btn btn-primary" onclick="downloadFile('sdf')">
+                        <span class="btn-icon">📦</span> SDF (3D)
+                    </button>
+                    <button class="btn btn-primary" onclick="downloadFile('smi')">
+                        <span class="btn-icon">📝</span> SMILES
+                    </button>
+                </div>
+                <button class="btn btn-outline" onclick="resetPipeline()">
+                    Run New Analysis
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>Drug Discovery Pipeline — Fragment-Based Drug Design with AI</p>
+        <p class="footer-sub">Powered by RDKit • scikit-learn • Open Babel</p>
+    </footer>
+
+    <script>
+        let currentJobId = null;
+        let pollInterval = null;
+
+        // Drag & Drop
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                showFileName(e.dataTransfer.files[0].name);
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                showFileName(fileInput.files[0].name);
+            }
+        });
+
+        function showFileName(name) {
+            const el = document.getElementById('file-name');
+            el.textContent = '📄 ' + name;
+            el.style.display = 'block';
+        }
+
+        function startPipeline() {
+            const formData = new FormData();
+            const fileInput2 = document.getElementById('file-input');
+            const smilesText = document.getElementById('smiles-text').value.trim();
+            const reaxysKey = document.getElementById('reaxys-key').value.trim();
+
+            if (fileInput2.files.length) {
+                formData.append('file', fileInput2.files[0]);
+            } else if (smilesText) {
+                formData.append('smiles_text', smilesText);
+            } else {
+                alert('Please upload a file or paste SMILES strings.');
+                return;
+            }
+
+            if (reaxysKey) {
+                formData.append('reaxys_api_key', reaxysKey);
+            }
+
+            // Show progress
+            document.getElementById('upload-section').style.display = 'none';
+            document.getElementById('progress-section').style.display = 'block';
+            document.getElementById('error-section').style.display = 'none';
+            document.getElementById('results-section').style.display = 'none';
+
+            // Update header badge
+            const badge = document.querySelector('.header-badge span:last-child');
+            badge.textContent = 'Running';
+            document.querySelector('.badge-dot').classList.add('running');
+
+            fetch('/upload', { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        showError(data.error);
+                        return;
+                    }
+                    currentJobId = data.job_id;
+                    pollInterval = setInterval(pollStatus, 1500);
+                })
+                .catch(err => showError(err.message));
+        }
+
+        const STEP_ORDER = [
+            'parsing', 'decoy_generation', 'classifier_training',
+            'fragment_evaluation', 'fragment_linking', 'ranking',
+            'novelty_checking', 'complete'
+        ];
+
+        function pollStatus() {
+            if (!currentJobId) return;
+
+            fetch(`/api/status/${currentJobId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error && !data.current_step) {
+                        showError(data.error);
+                        clearInterval(pollInterval);
+                        return;
+                    }
+
+                    // Update progress bar
+                    const bar = document.getElementById('progress-bar');
+                    const text = document.getElementById('progress-text');
+                    bar.style.width = data.progress + '%';
+                    text.textContent = data.progress + '%';
+
+                    // Update message
+                    document.getElementById('progress-message').textContent =
+                        data.step_label + (data.message ? ': ' + data.message : '');
+
+                    // Update elapsed time
+                    document.getElementById('elapsed-time').textContent =
+                        Math.round(data.elapsed_seconds) + 's';
+
+                    // Update step indicators
+                    const currentIdx = STEP_ORDER.indexOf(data.current_step);
+                    document.querySelectorAll('.pipeline-step').forEach((el, idx) => {
+                        const stepName = el.getAttribute('data-step');
+                        const stepIdx = STEP_ORDER.indexOf(stepName);
+
+                        el.classList.remove('active', 'completed');
+                        if (stepIdx < currentIdx) {
+                            el.classList.add('completed');
+                        } else if (stepIdx === currentIdx) {
+                            el.classList.add('active');
+                        }
+                    });
+
+                    // Check for error
+                    if (data.error) {
+                        showError(data.error);
+                        clearInterval(pollInterval);
+                        return;
+                    }
+
+                    // Check for completion
+                    if (data.current_step === 'complete') {
+                        clearInterval(pollInterval);
+                        loadResults();
+                    }
+                })
+                .catch(err => console.error('Poll error:', err));
+        }
+
+        function loadResults() {
+            fetch(`/api/results/${currentJobId}`)
+                .then(r => r.json())
+                .then(data => {
+                    displayResults(data);
+                    document.getElementById('progress-section').style.display = 'none';
+                    document.getElementById('results-section').style.display = 'block';
+
+                    const badge = document.querySelector('.header-badge span:last-child');
+                    badge.textContent = 'Complete';
+                    document.querySelector('.badge-dot').classList.remove('running');
+                    document.querySelector('.badge-dot').classList.add('complete');
+                })
+                .catch(err => showError(err.message));
+        }
+
+        function displayResults(data) {
+            // Classifier Metrics
+            const metricsGrid = document.getElementById('metrics-grid');
+            const m = data.classifier?.metrics || {};
+            metricsGrid.innerHTML = `
+                <div class="metric-card">
+                    <div class="metric-value">${(m.cv_auc_roc || 0).toFixed(3)}</div>
+                    <div class="metric-label">AUC-ROC</div>
+                    <div class="metric-sub">±${(m.cv_auc_std || 0).toFixed(3)}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${((m.cv_accuracy || 0) * 100).toFixed(1)}%</div>
+                    <div class="metric-label">Accuracy</div>
+                    <div class="metric-sub">${m.n_folds || 5}-fold CV</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${((m.cv_precision || 0) * 100).toFixed(1)}%</div>
+                    <div class="metric-label">Precision</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${((m.cv_recall || 0) * 100).toFixed(1)}%</div>
+                    <div class="metric-label">Recall</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${m.n_actives || 0}</div>
+                    <div class="metric-label">Actives</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${m.n_decoys || 0}</div>
+                    <div class="metric-label">Decoys</div>
+                </div>
+            `;
+
+            // Novelty Summary
+            const novSummary = document.getElementById('novelty-summary');
+            const nov = data.novelty || {};
+            novSummary.innerHTML = `
+                <div class="novelty-badge novel">🆕 ${nov.novel || 0} Novel</div>
+                <div class="novelty-badge similar">🔍 ${nov.similar || 0} Similar-to-known</div>
+                <div class="novelty-badge known">📗 ${nov.known || 0} Known</div>
+            `;
+
+            // Top Molecules
+            const molGrid = document.getElementById('molecules-grid');
+            const topMols = data.top_molecules || [];
+            molGrid.innerHTML = topMols.map((mol, i) => {
+                const encodedSmi = encodeURIComponent(mol.smiles);
+                const noveltyClass = (mol.novelty || 'Novel').toLowerCase().replace(/-/g, '');
+                const noveltyLabel = mol.novelty || 'Novel';
+                return `
+                <div class="molecule-card" style="animation-delay: ${i * 0.08}s">
+                    <div class="mol-rank">#${i + 1}</div>
+                    <div class="mol-image">
+                        <img src="/api/molecule_image/${encodedSmi}" alt="${mol.smiles}" loading="lazy">
+                    </div>
+                    <div class="mol-scores">
+                        <div class="mol-composite">
+                            <span class="score-label">Composite</span>
+                            <span class="score-value">${(mol.composite_score || 0).toFixed(3)}</span>
+                        </div>
+                        <div class="mol-details">
+                            <div><span>Activity:</span> <strong>${(mol.activity_score || 0).toFixed(3)}</strong></div>
+                            <div><span>Drug-like:</span> <strong>${(mol.druglikeness || 0).toFixed(2)}</strong></div>
+                            <div><span>SA Score:</span> <strong>${mol.sa_raw || '-'}</strong></div>
+                            <div><span>Diversity:</span> <strong>${(mol.diversity || 0).toFixed(3)}</strong></div>
+                            <div><span>MW:</span> <strong>${mol.mw || '-'}</strong></div>
+                            <div><span>LogP:</span> <strong>${mol.logp || '-'}</strong></div>
+                        </div>
+                    </div>
+                    <div class="mol-novelty ${noveltyClass}">
+                        ${noveltyLabel}
+                        ${mol.closest_hit ? '<span class="hit-id">(' + mol.closest_hit + ')</span>' : ''}
+                    </div>
+                    <div class="mol-smiles" title="${mol.smiles}">${mol.smiles}</div>
+                </div>`;
+            }).join('');
+
+            // Fragment Table
+            const fragTbody = document.getElementById('fragments-tbody');
+            const frags = data.fragments?.top_fragments || [];
+            fragTbody.innerHTML = frags.slice(0, 15).map((frag, i) => {
+                const encodedSmi = encodeURIComponent(frag.smiles);
+                return `
+                <tr style="animation-delay: ${i * 0.05}s" class="fade-in-row">
+                    <td>${i + 1}</td>
+                    <td><img src="/api/molecule_image/${encodedSmi}" class="frag-img" alt="${frag.smiles}"></td>
+                    <td class="smiles-cell">${frag.smiles}</td>
+                    <td><strong>${(frag.score || 0).toFixed(3)}</strong></td>
+                    <td>${frag.mw || '-'}</td>
+                    <td><span class="source-tag ${frag.source || ''}">${frag.source || '-'}</span></td>
+                </tr>`;
+            }).join('');
+
+            // Download logic is handled by downloadFile()
+        }
+
+        function downloadFile(format) {
+            if (currentJobId) {
+                window.location.href = `/api/download/${currentJobId}?format=${format}`;
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('progress-section').style.display = 'none';
+            document.getElementById('error-section').style.display = 'block';
+            document.getElementById('error-message').textContent = message;
+
+            const badge = document.querySelector('.header-badge span:last-child');
+            badge.textContent = 'Error';
+            document.querySelector('.badge-dot').classList.remove('running');
+            document.querySelector('.badge-dot').classList.add('error');
+        }
+
+        function resetPipeline() {
+            currentJobId = null;
+            if (pollInterval) clearInterval(pollInterval);
+
+            document.getElementById('upload-section').style.display = 'block';
+            document.getElementById('progress-section').style.display = 'none';
+            document.getElementById('error-section').style.display = 'none';
+            document.getElementById('results-section').style.display = 'none';
+
+            // Reset progress
+            document.getElementById('progress-bar').style.width = '0%';
+            document.getElementById('progress-text').textContent = '0%';
+            document.querySelectorAll('.pipeline-step').forEach(el => {
+                el.classList.remove('active', 'completed');
+            });
+
+            const badge = document.querySelector('.header-badge span:last-child');
+            badge.textContent = 'Ready';
+            const dot = document.querySelector('.badge-dot');
+            dot.classList.remove('running', 'complete', 'error');
+        }
+    </script>
+</body>
+
+</html>
