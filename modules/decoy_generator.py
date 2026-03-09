@@ -129,10 +129,12 @@ def _generate_random_smiles(n=500):
     # and using different random seeds for enumeration
     substituents = ['C', 'CC', 'O', 'N', 'F', 'Cl', 'OC', 'NC', 'C(=O)O', 'C(=O)N']
     
+    random.seed(42) # Ensure determinism
     attempts = 0
     while len(generated) < n and attempts < n * 10:
         attempts += 1
         base = random.choice(base_mols)
+        # Using a deterministic pseudo-random approach for smiles generation
         smi = Chem.MolToSmiles(base, doRandom=True)
         mol = Chem.MolFromSmiles(smi)
         if mol is not None and mol not in generated:
@@ -173,9 +175,11 @@ def generate_decoys(active_molecules, decoys_per_active=39, max_total=5000):
     
     # Pre-compute background properties and fingerprints
     bg_data = []
+    # Sort active smiles before iterating for determinism
+    sorted_active_smiles = sorted(list(active_smiles_set))
     for mol in background_mols:
         smi = Chem.MolToSmiles(mol)
-        if smi in active_smiles_set:
+        if smi in sorted_active_smiles:
             continue
         try:
             props = _compute_properties(mol)
@@ -204,6 +208,9 @@ def generate_decoys(active_molecules, decoys_per_active=39, max_total=5000):
             if relaxation > 1.0:
                 stats['relaxations'] += 1
             
+            random.seed(42 + act_idx + int(relaxation * 10))
+            # Sort the structured dicts by SMILES before shuffling, to ensure identical order before shuffle
+            bg_data = sorted(bg_data, key=lambda x: x['smiles'])
             random.shuffle(bg_data)
             
             for bg in bg_data:
@@ -245,6 +252,6 @@ def generate_decoys(active_molecules, decoys_per_active=39, max_total=5000):
     
     return {
         'decoys': all_decoys,
-        'decoy_smiles': list(all_decoy_smiles),
+        'decoy_smiles': sorted(list(all_decoy_smiles)),
         'stats': stats,
     }

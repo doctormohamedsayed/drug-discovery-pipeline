@@ -90,7 +90,7 @@ def brics_link_fragments(fragment_smiles, top_n=20, max_molecules=5000):
     
     # Convert back to mols for BRICSBuild
     brics_mol_list = []
-    for smi in all_brics_frags:
+    for smi in sorted(list(all_brics_frags)):
         mol = Chem.MolFromSmiles(smi)
         if mol is not None:
             brics_mol_list.append(mol)
@@ -142,7 +142,7 @@ def brics_link_fragments(fragment_smiles, top_n=20, max_molecules=5000):
             if len(generated) >= max_molecules:
                 break
     
-    return list(generated)
+    return sorted(list(generated))
 
 
 def scaffold_merge(fragment_smiles, top_n=15, max_molecules=2000):
@@ -212,7 +212,7 @@ def scaffold_merge(fragment_smiles, top_n=15, max_molecules=2000):
         if len(generated) >= max_molecules:
             break
     
-    return list(generated)
+    return sorted(list(generated))
 
 
 def generate_3d_conformer(mol, num_conformers=1, optimize=True):
@@ -341,7 +341,7 @@ def link_and_merge_fragments(ranked_fragments, max_output=10000, progress_callba
     merged_molecules = scaffold_merge(frag_smiles, top_n=15, max_molecules=max_output // 2)
     
     # Combine and deduplicate
-    all_smiles = set(brics_molecules) | set(merged_molecules)
+    all_smiles = sorted(list(set(brics_molecules) | set(merged_molecules)))
     
     if progress_callback:
         progress_callback("3d_gen", f"Generating 3D conformers for {len(all_smiles)} molecules...")
